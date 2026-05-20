@@ -1,0 +1,923 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cody.web — Sistema de Asistencia</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/dist/tabler-icons.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  --bg: #0a0e1a;
+  --surface: #111827;
+  --surface2: #1a2235;
+  --accent: #4f8ef7;
+  --success: #10b981;
+  --warning: #f59e0b;
+  --danger: #ef4444;
+  --text: #f0f4ff;
+  --text2: #94a3b8;
+  --text3: #64748b;
+  --border: rgba(255,255,255,0.08);
+  --border2: rgba(255,255,255,0.15);
+  --r: 10px;
+  --rl: 16px;
+}
+
+body {
+  font-family: 'DM Sans', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+}
+
+/* ── LOGIN ── */
+#login-screen {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+}
+.login-box {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--rl);
+  padding: 2rem;
+  width: 100%;
+  max-width: 420px;
+}
+.login-logo {
+  font-family: 'Syne', sans-serif;
+  font-weight: 800;
+  font-size: 1.5rem;
+  text-align: center;
+  margin-bottom: 1.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+.login-logo span { color: var(--accent); }
+.logo-dot { width: 8px; height: 8px; background: var(--accent); border-radius: 50%; display: inline-block; }
+.login-tabs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-bottom: 1.5rem;
+}
+.ltab {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  padding: 12px;
+  text-align: center;
+  cursor: pointer;
+  font-size: 13px;
+  color: var(--text2);
+  transition: all .2s;
+}
+.ltab i { display: block; font-size: 24px; margin-bottom: 5px; }
+.ltab.active {
+  background: rgba(79,142,247,0.12);
+  border-color: rgba(79,142,247,0.35);
+  color: var(--accent);
+}
+.login-note {
+  font-size: 13px;
+  color: var(--text2);
+  text-align: center;
+  padding: .5rem 0 1rem;
+  line-height: 1.6;
+}
+
+/* ── NAV ── */
+nav {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  background: rgba(10,14,26,0.95);
+  backdrop-filter: blur(16px);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 1.5rem;
+  height: 54px;
+}
+.logo {
+  font-family: 'Syne', sans-serif;
+  font-weight: 800;
+  font-size: 1.15rem;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+.logo span { color: var(--accent); }
+.nav-links { display: flex; gap: 2px; }
+.nav-links button {
+  background: none;
+  border: none;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 13px;
+  color: var(--text2);
+  padding: 6px 12px;
+  border-radius: var(--r);
+  cursor: pointer;
+  transition: all .2s;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+.nav-links button:hover { color: var(--text); background: var(--surface2); }
+.nav-links button.active { color: var(--accent); background: rgba(79,142,247,0.12); }
+.nav-right { display: flex; align-items: center; gap: 8px; }
+.role-pill {
+  font-size: 11px;
+  padding: 3px 11px;
+  border-radius: 100px;
+  font-weight: 500;
+}
+.role-admin { background: rgba(124,58,237,0.15); color: #a78bfa; }
+.role-est   { background: rgba(16,185,129,0.12);  color: #10b981; }
+.logout-btn {
+  background: none;
+  border: 1px solid var(--border2);
+  color: var(--text3);
+  font-size: 12px;
+  padding: 5px 11px;
+  border-radius: var(--r);
+  cursor: pointer;
+  font-family: 'DM Sans', sans-serif;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  transition: all .2s;
+}
+.logout-btn:hover { color: var(--danger); border-color: rgba(239,68,68,.4); }
+
+/* ── PAGES ── */
+#app { display: none; }
+.page { display: none; padding: 1.75rem 1.5rem; max-width: 640px; margin: 0 auto; }
+.page.wide { max-width: 940px; }
+.page.active { display: block; animation: fade .2s ease; }
+@keyframes fade { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: none; } }
+
+/* ── TYPOGRAPHY ── */
+h2 { font-family: 'Syne', sans-serif; font-size: 1.4rem; font-weight: 700; margin-bottom: .3rem; }
+.sub { font-size: 13px; color: var(--text2); margin-bottom: 1.4rem; }
+
+/* ── CARD ── */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--rl);
+  padding: 1.25rem;
+  margin-bottom: 1rem;
+}
+
+/* ── STATS ── */
+.stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  margin-bottom: 1.25rem;
+}
+.stat {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  padding: .75rem;
+  text-align: center;
+}
+.stat .n { font-family: 'Syne', sans-serif; font-size: 1.55rem; font-weight: 700; }
+.stat .l { font-size: 11px; color: var(--text3); margin-top: 2px; }
+
+/* ── FORM ── */
+.field { margin-bottom: .9rem; }
+label { display: block; font-size: 12px; color: var(--text2); margin-bottom: 4px; }
+input, select {
+  width: 100%;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  padding: 9px 12px;
+  color: var(--text);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 14px;
+  outline: none;
+  transition: border-color .2s;
+}
+input:focus, select:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(79,142,247,0.1);
+}
+input.invalid {
+  border-color: var(--danger) !important;
+  box-shadow: 0 0 0 3px rgba(239,68,68,0.1) !important;
+}
+select option { background: var(--surface2); }
+.row2 { display: grid; grid-template-columns: 1fr 1fr; gap: .75rem; margin-bottom: .9rem; }
+
+/* ── BUTTONS ── */
+.btn-main {
+  width: 100%;
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  padding: 11px;
+  border-radius: var(--r);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  margin-top: .4rem;
+  transition: all .2s;
+}
+.btn-main:hover { background: #3b7df0; transform: translateY(-1px); }
+.btn-outline {
+  background: var(--surface2);
+  border: 1px solid var(--border2);
+  color: var(--text2);
+  padding: 7px 14px;
+  border-radius: var(--r);
+  cursor: pointer;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  transition: all .2s;
+  margin-top: .75rem;
+}
+.btn-outline:hover { color: var(--text); }
+.btn-danger {
+  background: rgba(239,68,68,.08);
+  border: 1px solid rgba(239,68,68,.2);
+  color: var(--danger);
+  padding: 8px 14px;
+  border-radius: var(--r);
+  cursor: pointer;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 13px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  transition: background .2s;
+}
+.btn-danger:hover { background: rgba(239,68,68,.15); }
+
+/* ── QR ── */
+.qr-center { text-align: center; padding: .5rem 0; }
+.qr-box { background: #fff; border-radius: var(--r); padding: 14px; display: inline-block; margin: .75rem 0; }
+.qr-placeholder {
+  width: 155px; height: 155px;
+  border: 1px dashed var(--border2);
+  border-radius: var(--r);
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  gap: 8px; color: var(--text3); font-size: 12px; margin: .75rem auto;
+}
+.qr-placeholder i { font-size: 2rem; }
+.code-pill {
+  font-family: monospace; font-size: 15px; font-weight: 700;
+  background: rgba(79,142,247,0.12); color: var(--accent);
+  padding: 4px 16px; border-radius: 100px;
+  display: inline-block; margin-bottom: .5rem; letter-spacing: 1px;
+}
+.timer { font-family: 'Syne', sans-serif; font-size: 2rem; font-weight: 700; color: var(--success); }
+.timer.exp { color: var(--danger); }
+
+/* ── ALERTS ── */
+.ok-box {
+  background: rgba(16,185,129,.08); border: 1px solid rgba(16,185,129,.2);
+  border-radius: var(--r); padding: .85rem 1rem;
+  margin-bottom: 1rem; font-size: 13px; color: var(--success); line-height: 1.7;
+}
+.err-box {
+  background: rgba(239,68,68,.08); border: 1px solid rgba(239,68,68,.2);
+  border-radius: var(--r); padding: .85rem 1rem;
+  margin-bottom: 1rem; font-size: 13px; color: var(--danger);
+}
+
+/* ── TABLE ── */
+.filter-row { display: flex; gap: 8px; margin-bottom: 1rem; flex-wrap: wrap; }
+.filter-row input { flex: 1; min-width: 160px; font-size: 13px; }
+.filter-row select { font-size: 13px; min-width: 130px; }
+.tbl-wrap {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--rl); overflow: auto;
+}
+table { width: 100%; border-collapse: collapse; font-size: 13px; }
+thead th {
+  padding: 9px 13px; font-size: 11px; color: var(--text3);
+  text-align: left; text-transform: uppercase; letter-spacing: .04em;
+  background: var(--surface2); border-bottom: 1px solid var(--border);
+}
+tbody td { padding: 10px 13px; border-bottom: 1px solid var(--border); color: var(--text2); }
+tbody tr:last-child td { border-bottom: none; }
+tbody tr:hover td { background: var(--surface2); }
+.badge { display: inline-block; padding: 2px 9px; border-radius: 100px; font-size: 11px; font-weight: 500; }
+.bp { background: rgba(16,185,129,.12); color: #10b981; }
+.bt { background: rgba(245,158,11,.12); color: #f59e0b; }
+.ba { background: rgba(239,68,68,.12); color: #ef4444; }
+.bq { background: rgba(79,142,247,.12); color: #4f8ef7; }
+.del-btn {
+  background: none; border: none; color: var(--danger);
+  cursor: pointer; padding: 3px 7px; border-radius: 5px; font-size: 14px;
+}
+.del-btn:hover { background: rgba(239,68,68,.1); }
+.empty { text-align: center; padding: 2.5rem; color: var(--text3); font-size: 13px; }
+
+/* ── STUDENT BIG CARDS ── */
+.big-cards { display: flex; gap: 12px; flex-wrap: wrap; }
+.big-card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--rl); padding: 2rem 1.5rem;
+  text-align: center; cursor: pointer; transition: all .25s;
+  flex: 1; min-width: 180px;
+}
+.big-card:hover { border-color: rgba(79,142,247,.4); transform: translateY(-3px); }
+.big-card i { font-size: 2.5rem; color: var(--accent); display: block; margin-bottom: .9rem; }
+.big-card h3 { font-family: 'Syne', sans-serif; font-size: 1rem; font-weight: 700; margin-bottom: .4rem; }
+.big-card p { font-size: 13px; color: var(--text2); line-height: 1.5; }
+
+/* ── TOAST ── */
+.toast {
+  position: fixed; bottom: 1.25rem; right: 1.25rem; z-index: 999;
+  padding: 10px 17px; border-radius: var(--r); font-size: 13px; font-weight: 500;
+  display: none; align-items: center; gap: 7px;
+  box-shadow: 0 4px 20px rgba(0,0,0,.4);
+}
+.toast.show { display: flex; animation: slideIn .25s ease; }
+.toast.ok  { background: var(--success); color: #fff; }
+.toast.err { background: var(--danger);  color: #fff; }
+@keyframes slideIn { from { transform: translateX(60px); opacity: 0; } to { transform: none; opacity: 1; } }
+
+/* ── RESPONSIVE ── */
+@media (max-width: 600px) {
+  .row2 { grid-template-columns: 1fr; }
+  .stats { grid-template-columns: repeat(2, 1fr); }
+  .nav-links button { padding: 6px 8px; font-size: 12px; }
+  .nav-links button span { display: none; }
+  h2 { font-size: 1.2rem; }
+}
+@media (max-width: 380px) {
+  nav { padding: 0 .75rem; }
+  .page { padding: 1.25rem 1rem; }
+}
+</style>
+</head>
+<body>
+
+<!-- ══ LOGIN ══ -->
+<div id="login-screen">
+  <div class="login-box">
+    <div class="login-logo">
+      <span class="logo-dot"></span>Cody<span>.web</span>
+    </div>
+    <div class="login-tabs">
+      <div class="ltab active" onclick="setRole('admin')" id="tab-admin">
+        <i class="ti ti-shield-lock"></i>Administrador
+      </div>
+      <div class="ltab" onclick="setRole('est')" id="tab-est">
+        <i class="ti ti-user"></i>Estudiante
+      </div>
+    </div>
+    <div id="admin-fields">
+      <div class="field">
+        <label>Usuario</label>
+        <input type="text" id="l-user" placeholder="admin" value="admin">
+      </div>
+      <div class="field">
+        <label>Contraseña</label>
+        <input type="password" id="l-pass" placeholder="••••••"
+               onkeydown="if(event.key==='Enter') login()">
+      </div>
+    </div>
+    <div id="est-fields" style="display:none">
+      <p class="login-note">
+        Accede como estudiante para registrar tu asistencia de forma manual
+        o escaneando el código QR de tu docente.
+      </p>
+    </div>
+    <button class="btn-main" onclick="login()">
+      <i class="ti ti-login"></i>
+      <span id="btn-txt">Ingresar como administrador</span>
+    </button>
+  </div>
+</div>
+
+<!-- ══ APP ══ -->
+<div id="app">
+  <nav>
+    <div class="logo"><span class="logo-dot"></span>Cody<span>.web</span></div>
+    <div class="nav-links" id="nav-links"></div>
+    <div class="nav-right">
+      <span class="role-pill" id="role-pill"></span>
+      <button class="logout-btn" onclick="logout()">
+        <i class="ti ti-logout"></i> Salir
+      </button>
+    </div>
+  </nav>
+
+  <!-- INICIO ADMIN -->
+  <div class="page" id="page-home-admin">
+    <h2>Panel de administrador</h2>
+    <p class="sub">Bienvenido — aquí controlas todo el sistema</p>
+    <div class="stats">
+      <div class="stat"><div class="n" id="h-total">0</div><div class="l">Total</div></div>
+      <div class="stat"><div class="n" style="color:var(--accent)" id="h-qr">0</div><div class="l">Vía QR</div></div>
+      <div class="stat"><div class="n" style="color:var(--success)" id="h-pres">0</div><div class="l">Presentes</div></div>
+      <div class="stat"><div class="n" style="color:var(--danger)" id="h-aus">0</div><div class="l">Ausentes</div></div>
+    </div>
+    <div class="card">
+      <p style="font-size:13px;color:var(--text2);line-height:1.8">
+        Como <strong style="color:var(--text)">administrador</strong> puedes generar códigos QR
+        para cada clase, ver todos los registros de asistencia, filtrar por estado
+        y eliminar registros de la base de datos.
+      </p>
+    </div>
+  </div>
+
+  <!-- INICIO ESTUDIANTE -->
+  <div class="page" id="page-home-est">
+    <h2>Hola, estudiante</h2>
+    <p class="sub">¿Qué deseas hacer hoy?</p>
+    <div class="big-cards">
+      <div class="big-card" onclick="gp('registro')">
+        <i class="ti ti-edit"></i>
+        <h3>Registro manual</h3>
+        <p>Completa tus datos para registrar tu asistencia sin QR</p>
+      </div>
+      <div class="big-card" onclick="gp('scan')">
+        <i class="ti ti-scan"></i>
+        <h3>Escanear QR</h3>
+        <p>Ingresa el código QR que te mostró tu docente</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- GENERAR QR (admin) -->
+  <div class="page" id="page-qr">
+    <h2>Generar QR de clase</h2>
+    <p class="sub">Crea el código QR para que los estudiantes registren su asistencia</p>
+    <div class="card">
+      <div class="row2">
+        <div class="field">
+          <label>Nombre del docente</label>
+          <input type="text" id="q-docente" placeholder="Dr. Pérez"
+                 oninput="soloLetras(this)">
+        </div>
+        <div class="field">
+          <label>Materia</label>
+          <input type="text" id="q-materia" placeholder="Sistemas Informáticos"
+                 oninput="soloLetras(this)">
+        </div>
+      </div>
+      <div class="row2">
+        <div class="field">
+          <label>Fecha</label>
+          <input type="date" id="q-fecha">
+        </div>
+        <div class="field">
+          <label>Validez del QR</label>
+          <select id="q-mins">
+            <option value="5">5 minutos</option>
+            <option value="10" selected>10 minutos</option>
+            <option value="15">15 minutos</option>
+            <option value="30">30 minutos</option>
+          </select>
+        </div>
+      </div>
+      <button class="btn-main" onclick="generarQR()">
+        <i class="ti ti-qrcode"></i> Generar QR
+      </button>
+    </div>
+    <div class="card qr-center" id="qr-display">
+      <div class="qr-placeholder">
+        <i class="ti ti-qrcode"></i>
+        <span>Configura y genera el QR</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- REGISTROS (admin) -->
+  <div class="page wide" id="page-registros">
+    <h2>Registros de asistencia</h2>
+    <p class="sub" id="reg-sub">0 registros en total</p>
+    <div class="stats">
+      <div class="stat"><div class="n" style="color:var(--accent)"  id="r-total">0</div><div class="l">Total</div></div>
+      <div class="stat"><div class="n" style="color:var(--success)" id="r-pres">0</div><div class="l">Presentes</div></div>
+      <div class="stat"><div class="n" style="color:var(--warning)" id="r-tard">0</div><div class="l">Tardanzas</div></div>
+      <div class="stat"><div class="n" style="color:var(--danger)"  id="r-aus">0</div><div class="l">Ausentes</div></div>
+    </div>
+    <div class="filter-row">
+      <input placeholder="Buscar nombre o cédula..." id="buscar" oninput="renderTabla()">
+      <select id="fil-est" onchange="renderTabla()">
+        <option value="">Todos los estados</option>
+        <option>Presente</option>
+        <option>Tardanza</option>
+        <option>Ausente</option>
+      </select>
+      <button class="btn-danger" onclick="limpiar()">
+        <i class="ti ti-trash"></i> Limpiar BD
+      </button>
+    </div>
+    <div class="tbl-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Nombre</th><th>Cédula</th><th>Docente</th><th>Materia</th>
+            <th>Fecha</th><th>Hora</th><th>Estado</th><th>Método</th><th></th>
+          </tr>
+        </thead>
+        <tbody id="tbody"></tbody>
+      </table>
+      <div class="empty" id="empty">No hay registros aún.</div>
+    </div>
+  </div>
+
+  <!-- REGISTRO MANUAL (estudiante) -->
+  <div class="page" id="page-registro">
+    <h2>Registro manual</h2>
+    <p class="sub">Completa tus datos para registrar tu asistencia</p>
+    <div class="card">
+      <div class="row2">
+        <div class="field">
+          <label>Nombre completo</label>
+          <input type="text" id="f-nombre" placeholder="Juan García"
+                 oninput="soloLetras(this)">
+        </div>
+        <div class="field">
+          <label>Cédula / Carnet</label>
+          <input type="text" id="f-cedula" placeholder="12345678"
+                 oninput="soloNumeros(this)" inputmode="numeric" maxlength="10">
+        </div>
+      </div>
+      <div class="row2">
+        <div class="field">
+          <label>Docente</label>
+          <input type="text" id="f-docente" placeholder="Dr. Pérez"
+                 oninput="soloLetras(this)">
+        </div>
+        <div class="field">
+          <label>Materia</label>
+          <input type="text" id="f-materia" placeholder="Sistemas Informáticos"
+                 oninput="soloLetras(this)">
+        </div>
+      </div>
+      <div class="row2">
+        <div class="field">
+          <label>Fecha</label>
+          <input type="date" id="f-fecha">
+        </div>
+        <div class="field">
+          <label>Estado</label>
+          <select id="f-estado">
+            <option>Presente</option>
+            <option>Tardanza</option>
+            <option>Ausente</option>
+          </select>
+        </div>
+      </div>
+      <button class="btn-main" onclick="guardar()">
+        <i class="ti ti-clipboard-check"></i> Registrar asistencia
+      </button>
+    </div>
+  </div>
+
+  <!-- ESCANEAR QR (estudiante) -->
+  <div class="page" id="page-scan">
+    <h2>Escanear QR</h2>
+    <p class="sub">Ingresa el código que aparece en el QR de tu docente</p>
+    <div class="card">
+      <div class="field">
+        <label>Código QR</label>
+        <input type="text" id="s-codigo" placeholder="CODY-XXXXXX"
+               oninput="verificar()"
+               style="text-transform:uppercase;font-family:monospace;font-size:15px;letter-spacing:1px">
+      </div>
+      <div id="s-info"></div>
+      <div id="s-form" style="display:none">
+        <div class="row2">
+          <div class="field">
+            <label>Nombre completo</label>
+            <input type="text" id="s-nombre" placeholder="Juan García"
+                   oninput="soloLetras(this)">
+          </div>
+          <div class="field">
+            <label>Cédula / Carnet</label>
+            <input type="text" id="s-cedula" placeholder="12345678"
+                   oninput="soloNumeros(this)" inputmode="numeric" maxlength="10">
+          </div>
+        </div>
+        <div class="field">
+          <label>Estado</label>
+          <select id="s-estado">
+            <option>Presente</option>
+            <option>Tardanza</option>
+          </select>
+        </div>
+        <button class="btn-main" onclick="registrarQR()">
+          <i class="ti ti-scan"></i> Registrar asistencia vía QR
+        </button>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div class="toast" id="toast">
+  <i class="ti ti-check"></i>
+  <span id="tmsg"></span>
+</div>
+
+<!-- ══ JAVASCRIPT ══ -->
+<script>
+const DB         = 'cody_asistencias_v4';
+const SDB        = 'cody_sesiones_v4';
+const ADMIN_USER = 'admin';
+const ADMIN_PASS = '1234';
+
+let role      = null;
+let qrTimer   = null;
+let activeSes = null;
+let loginRole = 'admin';
+
+/* ── Base de datos ── */
+function getDB()    { try { return JSON.parse(localStorage.getItem(DB)  || '[]'); } catch { return []; } }
+function saveDB(d)  { localStorage.setItem(DB,  JSON.stringify(d)); }
+function getSes()   { try { return JSON.parse(localStorage.getItem(SDB) || '{}'); } catch { return {}; } }
+function saveSes(s) { localStorage.setItem(SDB, JSON.stringify(s)); }
+
+/* ── Validaciones de campos ── */
+function soloNumeros(el) {
+  el.value = el.value.replace(/[^0-9]/g, '');
+}
+function soloLetras(el) {
+  el.value = el.value.replace(/[0-9]/g, '');
+}
+
+/* ── Login ── */
+function setRole(r) {
+  loginRole = r;
+  document.getElementById('tab-admin').classList.toggle('active', r === 'admin');
+  document.getElementById('tab-est').classList.toggle('active',   r === 'est');
+  document.getElementById('admin-fields').style.display = r === 'admin' ? 'block' : 'none';
+  document.getElementById('est-fields').style.display   = r === 'est'   ? 'block' : 'none';
+  document.getElementById('btn-txt').textContent =
+    r === 'admin' ? 'Ingresar como administrador' : 'Entrar como estudiante';
+}
+
+function login() {
+  if (loginRole === 'admin') {
+    const u = document.getElementById('l-user').value.trim();
+    const p = document.getElementById('l-pass').value;
+    if (u !== ADMIN_USER || p !== ADMIN_PASS) {
+      toast('Usuario o contraseña incorrectos', 'err'); return;
+    }
+    role = 'admin';
+  } else {
+    role = 'est';
+  }
+  document.getElementById('login-screen').style.display = 'none';
+  document.getElementById('app').style.display = 'block';
+  buildNav();
+  gp(role === 'admin' ? 'home-admin' : 'home-est');
+}
+
+function logout() {
+  role = null;
+  if (qrTimer) clearInterval(qrTimer);
+  document.getElementById('login-screen').style.display = 'flex';
+  document.getElementById('app').style.display = 'none';
+  document.getElementById('l-pass').value = '';
+  setRole('admin');
+}
+
+/* ── Navegación ── */
+function buildNav() {
+  const pill  = document.getElementById('role-pill');
+  const links = document.getElementById('nav-links');
+  if (role === 'admin') {
+    pill.className   = 'role-pill role-admin';
+    pill.textContent = 'Administrador';
+    links.innerHTML  = `
+      <button onclick="gp('home-admin')" id="nav-home-admin">
+        <i class="ti ti-home"></i><span>Inicio</span>
+      </button>
+      <button onclick="gp('qr')" id="nav-qr">
+        <i class="ti ti-qrcode"></i><span>Generar QR</span>
+      </button>
+      <button onclick="gp('registros')" id="nav-registros">
+        <i class="ti ti-table"></i><span>Registros</span>
+      </button>`;
+  } else {
+    pill.className   = 'role-pill role-est';
+    pill.textContent = 'Estudiante';
+    links.innerHTML  = `
+      <button onclick="gp('home-est')" id="nav-home-est">
+        <i class="ti ti-home"></i><span>Inicio</span>
+      </button>
+      <button onclick="gp('registro')" id="nav-registro">
+        <i class="ti ti-edit"></i><span>Registro manual</span>
+      </button>
+      <button onclick="gp('scan')" id="nav-scan">
+        <i class="ti ti-scan"></i><span>Escanear QR</span>
+      </button>`;
+  }
+  const hoy = new Date().toISOString().split('T')[0];
+  ['q-fecha', 'f-fecha'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = hoy;
+  });
+}
+
+function gp(p) {
+  document.querySelectorAll('.page').forEach(x => x.classList.remove('active'));
+  document.querySelectorAll('.nav-links button').forEach(x => x.classList.remove('active'));
+  document.getElementById('page-' + p).classList.add('active');
+  const nb = document.getElementById('nav-' + p);
+  if (nb) nb.classList.add('active');
+  if (p === 'registros')  renderTabla();
+  if (p === 'home-admin') updHome();
+}
+
+function updHome() {
+  const db = getDB();
+  document.getElementById('h-total').textContent = db.length;
+  document.getElementById('h-qr').textContent    = db.filter(r => r.method === 'QR').length;
+  document.getElementById('h-pres').textContent  = db.filter(r => r.estado === 'Presente').length;
+  document.getElementById('h-aus').textContent   = db.filter(r => r.estado === 'Ausente').length;
+}
+
+/* ── Toast ── */
+function toast(msg, tipo = 'ok') {
+  const t = document.getElementById('toast');
+  t.className = 'toast show ' + tipo;
+  document.getElementById('tmsg').textContent = msg;
+  setTimeout(() => t.classList.remove('show'), 2800);
+}
+
+/* ── Generar QR ── */
+function mkCode() {
+  return 'CODY-' + Math.random().toString(36).substr(2, 6).toUpperCase();
+}
+
+function generarQR() {
+  const docente = document.getElementById('q-docente').value.trim();
+  const materia = document.getElementById('q-materia').value.trim();
+  const fecha   = document.getElementById('q-fecha').value;
+  const mins    = parseInt(document.getElementById('q-mins').value);
+  if (!docente || !materia) { toast('Escribe el docente y la materia', 'err'); return; }
+  if (qrTimer) clearInterval(qrTimer);
+  const code   = mkCode();
+  const expira = Date.now() + (mins * 60000);
+  const ses    = { code, docente, materia, fecha, expira };
+  const all    = getSes(); all[code] = ses; saveSes(all);
+  activeSes = ses;
+  const disp = document.getElementById('qr-display');
+  disp.innerHTML = `
+    <div class="code-pill">${code}</div>
+    <div class="qr-box" id="qr-canvas"></div>
+    <div class="timer" id="q-timer"></div>
+    <p style="font-size:12px;color:var(--text3);margin-top:.4rem">
+      ${docente} &middot; ${materia} &middot; ${fecha}
+    </p>
+    <button class="btn-outline" onclick="generarQR()">
+      <i class="ti ti-refresh"></i> Regenerar
+    </button>`;
+  new QRCode(document.getElementById('qr-canvas'), {
+    text: code, width: 158, height: 158,
+    colorDark: '#000000', colorLight: '#ffffff',
+    correctLevel: QRCode.CorrectLevel.M
+  });
+  function tick() {
+    const left = Math.max(0, Math.round((expira - Date.now()) / 1000));
+    const el   = document.getElementById('q-timer');
+    if (!el) { clearInterval(qrTimer); return; }
+    el.textContent = Math.floor(left / 60) + ':' + String(left % 60).padStart(2, '0');
+    if (left === 0) { el.classList.add('exp'); el.textContent = 'Expirado'; clearInterval(qrTimer); }
+  }
+  tick(); qrTimer = setInterval(tick, 1000);
+  toast('QR generado correctamente');
+}
+
+/* ── Verificar QR ── */
+function verificar() {
+  const code = document.getElementById('s-codigo').value.trim().toUpperCase();
+  const info = document.getElementById('s-info');
+  const form = document.getElementById('s-form');
+  if (code.length < 8) { info.innerHTML = ''; form.style.display = 'none'; return; }
+  const ses = getSes()[code];
+  if (!ses) {
+    info.innerHTML = '<div class="err-box"><i class="ti ti-x"></i> Código no válido.</div>';
+    form.style.display = 'none'; return;
+  }
+  if (Date.now() > ses.expira) {
+    info.innerHTML = '<div class="err-box"><i class="ti ti-clock-x"></i> QR expirado. Solicita uno nuevo al docente.</div>';
+    form.style.display = 'none'; return;
+  }
+  const left = Math.ceil((ses.expira - Date.now()) / 60000);
+  info.innerHTML = `
+    <div class="ok-box">
+      <i class="ti ti-circle-check"></i> Sesión válida &mdash; ${left} min restantes<br>
+      <strong>${ses.docente}</strong> &middot; ${ses.materia} &middot; ${ses.fecha}
+    </div>`;
+  form.style.display = 'block'; activeSes = ses;
+}
+
+/* ── Registrar vía QR ── */
+function registrarQR() {
+  if (!activeSes) { toast('Verifica el código QR primero', 'err'); return; }
+  if (Date.now() > activeSes.expira) { toast('El QR expiró. Pide uno nuevo.', 'err'); return; }
+  const nombre = document.getElementById('s-nombre').value.trim();
+  const cedula = document.getElementById('s-cedula').value.trim();
+  const estado = document.getElementById('s-estado').value;
+  if (!nombre || !cedula) { toast('Completa tu nombre y cédula', 'err'); return; }
+  const db = getDB();
+  db.push({
+    id: Date.now(), nombre, cedula,
+    docente: activeSes.docente, materia: activeSes.materia,
+    fecha: activeSes.fecha, hora: new Date().toTimeString().slice(0, 5),
+    estado, method: 'QR'
+  });
+  saveDB(db); toast('Asistencia registrada vía QR');
+  ['s-nombre', 's-cedula', 's-codigo'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('s-info').innerHTML = '';
+  document.getElementById('s-form').style.display = 'none';
+  activeSes = null;
+}
+
+/* ── Registro manual ── */
+function guardar() {
+  const nombre  = document.getElementById('f-nombre').value.trim();
+  const cedula  = document.getElementById('f-cedula').value.trim();
+  const docente = document.getElementById('f-docente').value.trim();
+  const materia = document.getElementById('f-materia').value.trim();
+  const fecha   = document.getElementById('f-fecha').value;
+  const estado  = document.getElementById('f-estado').value;
+  if (!nombre || !cedula || !docente || !materia) {
+    toast('Completa todos los campos', 'err'); return;
+  }
+  const db = getDB();
+  db.push({
+    id: Date.now(), nombre, cedula, docente, materia, fecha,
+    hora: new Date().toTimeString().slice(0, 5), estado, method: 'Manual'
+  });
+  saveDB(db); toast('Asistencia registrada');
+  ['f-nombre', 'f-cedula', 'f-docente', 'f-materia'].forEach(id =>
+    document.getElementById(id).value = ''
+  );
+}
+
+/* ── Tabla de registros ── */
+function renderTabla() {
+  const db   = getDB();
+  const q    = document.getElementById('buscar').value.toLowerCase();
+  const fe   = document.getElementById('fil-est').value;
+  const rows = db.filter(r =>
+    (!q  || (r.nombre + r.cedula).toLowerCase().includes(q)) &&
+    (!fe || r.estado === fe)
+  ).reverse();
+  document.getElementById('r-total').textContent = db.length;
+  document.getElementById('r-pres').textContent  = db.filter(r => r.estado === 'Presente').length;
+  document.getElementById('r-tard').textContent  = db.filter(r => r.estado === 'Tardanza').length;
+  document.getElementById('r-aus').textContent   = db.filter(r => r.estado === 'Ausente').length;
+  document.getElementById('reg-sub').textContent = db.length + ' registros en total';
+  const tbody = document.getElementById('tbody');
+  const empty = document.getElementById('empty');
+  if (!rows.length) { tbody.innerHTML = ''; empty.style.display = 'block'; return; }
+  empty.style.display = 'none';
+  tbody.innerHTML = rows.map(r => `
+    <tr>
+      <td style="color:var(--text);font-weight:500">${r.nombre}</td>
+      <td>${r.cedula}</td>
+      <td>${r.docente}</td>
+      <td>${r.materia}</td>
+      <td>${r.fecha}</td>
+      <td>${r.hora}</td>
+      <td><span class="badge ${r.estado==='Presente'?'bp':r.estado==='Tardanza'?'bt':'ba'}">${r.estado}</span></td>
+      <td><span class="badge ${r.method==='QR'?'bq':''}">${r.method}</span></td>
+      <td><button class="del-btn" onclick="del(${r.id})"><i class="ti ti-trash"></i></button></td>
+    </tr>`).join('');
+}
+
+function del(id) { saveDB(getDB().filter(r => r.id !== id)); renderTabla(); toast('Registro eliminado'); }
+function limpiar() {
+  if (confirm('¿Eliminar TODOS los registros? Esta acción no se puede deshacer.')) {
+    saveDB([]); renderTabla(); toast('Base de datos limpiada');
+  }
+}
+</script>
+</body>
+</html>
