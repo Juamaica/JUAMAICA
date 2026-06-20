@@ -303,7 +303,7 @@ tbody tr:hover td{background:rgba(0,212,255,0.03)}
       <div class="field"><label>Cédula / Carnet</label><input type="text" id="e-cedula" placeholder="12345678" oninput="soloNumeros(this)" inputmode="numeric" maxlength="10"></div>
     </div>
     <div class="row3">
-      <div class="field"><label>Materia</label><input type="text" id="e-materia" placeholder="Programación Web"></div>
+      <div class="field"><label>Materia</label><input type="text" id="e-materia" placeholder="Programación Web" oninput="soloLetras(this)"></div>
       <div class="field"><label>Docente</label><input type="text" id="e-docente" placeholder="Dr. Pérez" oninput="soloLetras(this)"></div>
       <div class="field"><label>Curso / Paralelo</label><input type="text" id="e-curso" placeholder="3ro B"></div>
     </div>
@@ -328,12 +328,6 @@ tbody tr:hover td{background:rgba(0,212,255,0.03)}
     <div id="qr-stu-selected" style="margin-bottom:1rem"></div>
     <div class="row2">
       <div class="field"><label>Fecha</label><input type="date" id="qr-fecha"></div>
-      <div class="field"><label>Validez del QR</label>
-        <select id="qr-mins">
-          <option value="5">5 minutos</option><option value="10" selected>10 minutos</option>
-          <option value="15">15 minutos</option><option value="30">30 minutos</option><option value="60">1 hora</option>
-        </select>
-      </div>
     </div>
     <button class="btn btn-primary btn-full" onclick="generarQR()"><i class="ti ti-qrcode"></i> Generar QR para este estudiante</button>
   </div>
@@ -345,6 +339,7 @@ tbody tr:hover td{background:rgba(0,212,255,0.03)}
     <div class="qr-meta" id="qr-meta"></div>
     <div style="margin-top:1rem;display:flex;gap:8px;justify-content:center;flex-wrap:wrap">
       <button class="btn btn-secondary btn-sm" onclick="generarQR()"><i class="ti ti-refresh"></i> Regenerar</button>
+      <button class="btn btn-primary btn-sm" onclick="descargarQR()"><i class="ti ti-download"></i> Descargar QR</button>
     </div>
   </div>
 </div>
@@ -611,26 +606,48 @@ function seleccionarEstudiante(stu){
 function generarQR(){
   if(!selectedStu){toast('Selecciona un estudiante primero','err');return}
   const fecha=document.getElementById('qr-fecha').value;
-  const mins=parseInt(document.getElementById('qr-mins').value);
   if(!fecha){toast('Selecciona una fecha','err');return}
   if(qrTimer) clearInterval(qrTimer);
-  const code=mkCode(), expira=Date.now()+mins*60000;
+  const code=mkCode(), expira=9999999999999;
   const all=getSes(); all[code]={code,stuId:selectedStu.id,nombre:selectedStu.nombre,cedula:selectedStu.cedula,materia:selectedStu.materia,docente:selectedStu.docente,curso:selectedStu.curso||'',fecha,expira}; saveSes(all);
   const result=document.getElementById('qr-result'); result.style.display='block';
   document.getElementById('qr-student-info').innerHTML=`<div class="stu-pill">${code}</div>`;
   document.getElementById('qr-canvas').innerHTML='';
   new QRCode(document.getElementById('qr-canvas'),{text:code,width:160,height:160,colorDark:'#000000',colorLight:'#ffffff',correctLevel:QRCode.CorrectLevel.M});
   document.getElementById('qr-meta').innerHTML=`<strong style="color:var(--text)">${selectedStu.nombre}</strong><br>CI: ${selectedStu.cedula} · ${selectedStu.materia}<br>${selectedStu.docente} · ${selectedStu.curso} · ${fecha}`;
-  const timerEl=document.getElementById('qr-timer-wrap');
-  function tick(){
-    const left=Math.max(0,Math.round((expira-Date.now())/1000));
-    const m=Math.floor(left/60),s=String(left%60).padStart(2,'0');
-    timerEl.innerHTML=left>0?`<div class="timer-big">${m}:${s}</div>`:`<div class="timer-big exp">⚠ Expirado</div>`;
-    if(left===0) clearInterval(qrTimer);
-  }
-  tick(); qrTimer=setInterval(tick,1000);
+  document.getElementById('qr-timer-wrap').innerHTML='';
   result.scrollIntoView({behavior:'smooth',block:'nearest'});
   toast('QR generado para '+selectedStu.nombre);
+}
+
+// ─── DESCARGAR QR ───
+function descargarQR(){
+  if(!selectedStu){toast('Genera un QR primero','err');return}
+  const canvas=document.querySelector('#qr-canvas canvas');
+  if(!canvas){toast('No hay QR para descargar','err');return}
+  // Crear canvas con nombre y cédula debajo del QR
+  const padding=20, labelH=60;
+  const out=document.createElement('canvas');
+  out.width=canvas.width+padding*2;
+  out.height=canvas.height+padding*2+labelH;
+  const ctx=out.getContext('2d');
+  ctx.fillStyle='#ffffff';
+  ctx.fillRect(0,0,out.width,out.height);
+  ctx.drawImage(canvas,padding,padding);
+  ctx.fillStyle='#000000';
+  ctx.textAlign='center';
+  const cx=out.width/2;
+  ctx.font='bold 16px Arial';
+  ctx.fillText(selectedStu.nombre,cx,canvas.height+padding+22);
+  ctx.font='13px Arial';
+  ctx.fillStyle='#444444';
+  ctx.fillText('CI: '+selectedStu.cedula,cx,canvas.height+padding+42);
+  ctx.fillText(selectedStu.materia+' · '+selectedStu.curso,cx,canvas.height+padding+58);
+  const link=document.createElement('a');
+  link.download='QR_'+selectedStu.nombre.replace(/ /g,'_')+'_'+selectedStu.cedula+'.png';
+  link.href=out.toDataURL('image/png');
+  link.click();
+  toast('QR descargado','ok');
 }
 
 // ─── CÁMARA ───
@@ -702,9 +719,7 @@ function verificarCodigo(code){
   if(code.length<8){info.innerHTML='';conf.style.display='none';return}
   const ses=getSes()[code];
   if(!ses){info.innerHTML='<div class="err-box"><i class="ti ti-x"></i> Código no válido.</div>';conf.style.display='none';return}
-  if(Date.now()>ses.expira){info.innerHTML='<div class="err-box"><i class="ti ti-clock-x"></i> QR expirado.</div>';conf.style.display='none';return}
-  const left=Math.ceil((ses.expira-Date.now())/60000);
-  info.innerHTML=`<div class="ok-box"><i class="ti ti-circle-check"></i> <strong>${ses.nombre}</strong><br>CI: ${ses.cedula} · ${ses.materia}<br>Fecha: ${ses.fecha} · ${left} min restantes</div>`;
+  info.innerHTML=`<div class="ok-box"><i class="ti ti-circle-check"></i> <strong>${ses.nombre}</strong><br>CI: ${ses.cedula} · ${ses.materia}<br>Fecha: ${ses.fecha}</div>`;
   pendingCode=code; conf.style.display='block';
 }
 
@@ -714,7 +729,6 @@ function confirmarRegistro(){ if(pendingCode) abrirModalAsistencia(pendingCode);
 function abrirModalAsistencia(code){
   const ses=getSes()[code];
   if(!ses){toast('Código no encontrado','err');return}
-  if(Date.now()>ses.expira){toast('El QR expiró','err');return}
   pendingCode=code;
   document.getElementById('modal-info').innerHTML=`
     <div class="ok-box"><strong>${ses.nombre}</strong><br>CI: ${ses.cedula} · ${ses.materia}<br>Docente: ${ses.docente} · Fecha: ${ses.fecha}</div>`;
